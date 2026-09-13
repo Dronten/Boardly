@@ -5,7 +5,8 @@ const listSchema = new mongoose.Schema({
     boardId: {
         type: mongoose.Schema.Types.ObjectId,
         ref: "Board",
-        required: true
+        required: true,
+        index: true
     },
     order: { type: Number, required: true }
 }, { timestamps: true });

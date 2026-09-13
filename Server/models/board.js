@@ -1,7 +1,10 @@
 import mongoose from 'mongoose';
 
 const boardSchema = new mongoose.Schema({
-    title: { type: String, required: true },
+    title: { 
+        type: String,
+        required: true 
+    },
     createdBy: {
         type: mongoose.Schema.Types.ObjectId,
         ref: "User",

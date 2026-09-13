@@ -6,7 +6,8 @@ const cardSchema = new mongoose.Schema({
     listId: {
         type: mongoose.Schema.Types.ObjectId,
         ref: "List",
-        required: true
+        required: true,
+        index: true
     },
     order: { type: Number, required: true },
     createdBy: {
