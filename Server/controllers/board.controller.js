@@ -1,4 +1,7 @@
 import { Board } from "../models/board.js";
+import { User } from "../models/user.js";
+import { List } from "../models/list.js";
+import { Card } from "../models/card.js";
 
 export const createBoard = async (req, res) => {
     try {
@@ -17,7 +20,7 @@ export const createBoard = async (req, res) => {
             message: "Board created successfully",
             success: true,
             board: newBoard
-            
+
             // the 3 default list will be added later
         });
 
@@ -153,6 +156,24 @@ export const removeMember = async (req, res) => {
 
 export const deleteBoard = async (req, res) => {
     try {
+        const { boardId } = req.params;
+        const board = await Board.findById(boardId);
+        if (!board) {
+            return res.status(404).json({ message: "Board not found", success: false });
+        }
+        const isAdmin = board.members.some((member) => member.userId.toString() === req.userId && member.role === "admin");
+        if (!isAdmin) {
+            return res.status(403).json({ message: "Admin Access denied", success: false });
+        }
+
+        const lists = await List.find({ boardId });
+        const listIds = lists.map((list) => list._id);
+
+        await Card.deleteMany({ listId: { $in: listIds } });
+        await List.deleteMany({ boardId });
+        await Board.findByIdAndDelete(boardId);
+
+        res.status(200).json({ message: "Board deleted successfully", success: true });
 
     } catch (error) {
         return res.status(500).json({ message: "Internal server error", success: false });
