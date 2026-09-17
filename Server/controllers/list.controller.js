@@ -101,11 +101,10 @@ export const removeList = async (req, res) => {
 
         await Card.deleteMany({ listId });
         await List.findByIdAndDelete(listId);
-        
+
         return res.status(200).json({ message: "List deleted successfully", success: true });
 
     } catch (error) {
         return res.status(500).json({ message: "Internal Server Error", success: false });
     }
 }
-
