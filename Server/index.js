@@ -5,6 +5,7 @@ import connectDB from "./config/db.js";
 import cookieParser from "cookie-parser";
 import userRoutes from "./routes/user.routes.js";
 import boardRoutes from "./routes/board.routes.js";
+import listRoutes from "./routes/list.routes.js";
 
 dotenv.config();
 connectDB();
@@ -20,6 +21,7 @@ app.use(cookieParser());
 
 app.use("/api/user", userRoutes);
 app.use("/api/board", boardRoutes);
+app.use("/api/list", listRoutes);
 
 
 app.get("/", (req, res) => {
