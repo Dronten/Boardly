@@ -39,6 +39,7 @@ export const createList = async (req, res) => {
         });
 
     } catch (error) {
+        console.log(error);
         return res.status(500).json({ message: "Internal server error", success: false });
     }
 }
@@ -73,6 +74,7 @@ export const updateList = async (req, res) => {
 
         return res.status(200).json({ message: "List updated successfully", success: true, list });
     } catch (error) {
+        console.log(error);
         return res.status(500).json({ message: "Internal server error", success: false });
     }
 }
@@ -90,7 +92,7 @@ export const removeList = async (req, res) => {
             return res.status(403).json({ message: "Admin Access denied", success: false });
         }
 
-        const list = await List.findById({ listId });
+        const list = await List.findById(listId);
         if (!list) {
             return res.status(404).json({ message: "List not found", success: false });
         }
@@ -105,6 +107,7 @@ export const removeList = async (req, res) => {
         return res.status(200).json({ message: "List deleted successfully", success: true });
 
     } catch (error) {
-        return res.status(500).json({ message: "Internal Server Error", success: false });
+        console.log(error);
+        return res.status(500).json({ message: "Internal server error", success: false });
     }
 }

@@ -25,6 +25,7 @@ export const createBoard = async (req, res) => {
         });
 
     } catch (error) {
+        console.log(error);
         return res.status(500).json({ message: "Internal server error", success: false });
     }
 }
@@ -35,6 +36,7 @@ export const getBoards = async (req, res) => {
         res.status(200).json({ message: "Board fetched successfully", success: true, boards });
 
     } catch (error) {
+        console.log(error);
         return res.status(500).json({ message: "Internal server error", success: false });
     }
 }
@@ -55,6 +57,7 @@ export const getBoardById = async (req, res) => {
         return res.status(200).json({ success: true, board });
 
     } catch (error) {
+        console.log(error);
         return res.status(500).json({ message: "Internal server error", success: false });
     }
 }
@@ -84,6 +87,7 @@ export const updateBoard = async (req, res) => {
         return res.status(200).json({ message: "Board updated successfully", success: true, board });
 
     } catch (error) {
+        console.log(error);
         return res.status(500).json({ message: "Internal server error", success: false });
     }
 }
@@ -122,6 +126,7 @@ export const addMember = async (req, res) => {
         return res.status(200).json({ message: "Member added successfully", success: true, board });
 
     } catch (error) {
+        console.log(error);
         return res.status(500).json({ message: "Internal server error", success: false });
     }
 }
@@ -150,6 +155,7 @@ export const removeMember = async (req, res) => {
         return res.status(200).json({ message: "Member removed successfully", success: true, board });
 
     } catch (error) {
+        console.log(error);
         return res.status(500).json({ message: "Internal server error", success: false });
     }
 }
@@ -176,6 +182,7 @@ export const deleteBoard = async (req, res) => {
         res.status(200).json({ message: "Board deleted successfully", success: true });
 
     } catch (error) {
+        console.log(error);
         return res.status(500).json({ message: "Internal server error", success: false });
     }
 }
