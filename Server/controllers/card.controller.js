@@ -4,7 +4,8 @@ import { Board } from "../models/board.js";
 
 export const createCard = async (req, res) => {
     try {
-        const { title, description = "", listId } = req.body;
+        const { title, description = "" } = req.body;
+        const { listId } = req.params;
         if (!title) {
             return res.status(400).json({ message: "Title is required", success: false });
         }

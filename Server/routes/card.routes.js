@@ -4,7 +4,7 @@ import { createCard, updateCard, moveCard, deleteCard } from "../controllers/car
 
 const router = express.Router();
 
-router.post("/", isAuthenticated, createCard);
+router.post("/:listId", isAuthenticated, createCard);
 router.patch("/:listId/:cardId", isAuthenticated, updateCard);
 router.post("/:listId/:cardId/move", isAuthenticated, moveCard);
 router.delete("/:listId/:cardId", isAuthenticated, deleteCard);
