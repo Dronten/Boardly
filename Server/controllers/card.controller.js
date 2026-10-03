@@ -77,7 +77,7 @@ export const updateCard = async (req, res) => {
             return res.status(403).json({ message: "Access denied", success: false });
         }
 
-        if (title !== undefined) card.title = title;
+        if (title !== undefined) card.title = title; // Here if you dont put any title while updating , it will show error , need to work on this logic if someone wants to empty title or idk if this feature needs to be implemented or not at all
         if (description !== undefined) card.description = description;
         await card.save();
 
