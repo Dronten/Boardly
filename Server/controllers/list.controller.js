@@ -68,8 +68,22 @@ export const updateList = async (req, res) => {
             return res.status(404).json({ message: "This list doesn't belong to this board", success: false });
         }
 
+        if (order !== undefined && order !== list.order) {
+            const oldOrder = list.order;
+            if (order > oldOrder) {
+                await List.updateMany(
+                    { boardId, order: { $gt: oldOrder, $lte: order } },
+                    { $inc: { order: -1 } }
+                );
+            } else {
+                await List.updateMany(
+                    { boardId, order: { $gte: order, $lt: oldOrder } },
+                    { $inc: { order: 1 } }
+                );
+            }
+            list.order = order;
+        }
         if (title !== undefined) list.title = title;
-        if (order !== undefined) list.order = order;
         await list.save();
 
         return res.status(200).json({ message: "List updated successfully", success: true, list });
@@ -103,6 +117,10 @@ export const removeList = async (req, res) => {
 
         await Card.deleteMany({ listId });
         await List.findByIdAndDelete(listId);
+        await List.updateMany(
+            { boardId: list.boardId, order: { $gt: list.order } },
+            { $inc: { order: -1 } }
+        );
 
         return res.status(200).json({ message: "List deleted successfully", success: true });
 

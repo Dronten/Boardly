@@ -93,6 +93,10 @@ export const moveCard = async (req, res) => {
         const { cardId, listId } = req.params;
         const { destinationListId, order: newOrder } = req.body;
 
+        if (newOrder === undefined) {
+            return res.status(400).json({ message: "Order is required", success: false });
+        };
+
         const list = await List.findById(listId);
         if (!list) {
             return res.status(400).json({ message: "List not found", success: false });
@@ -120,6 +124,16 @@ export const moveCard = async (req, res) => {
         // start here
         const oldOrder = card.order;
         const targetListId = destinationListId || listId;
+
+        if (targetListId !== listId) {
+            const destinationList = await List.findById(targetListId);
+            if (!destinationList) {
+                return res.status(404).json({ message: "Destination list not found", success: false });
+            }
+            if (destinationList.boardId.toString() !== list.boardId.toString()) {
+                return res.status(400).json({ message: "Cannot move a card to a list on a different board", success: false });
+            }
+        };
 
         if (targetListId === listId) {
 
@@ -185,6 +199,10 @@ export const deleteCard = async (req, res) => {
         }
 
         await Card.findByIdAndDelete(cardId);
+        await Card.updateMany(
+            { listId: card.listId, order: { $gt: card.order } },
+            { $inc: { order: -1 } }
+        );
 
         return res.status(200).json({ message: "Card deleted successfully", success: true });
 
