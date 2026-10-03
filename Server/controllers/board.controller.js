@@ -16,12 +16,14 @@ export const createBoard = async (req, res) => {
             members: [{ userId: req.userId, role: "admin" }]
         });
 
+        const defaultLists = ["To Do", "In Progress", "Done"];
+        const newLists = await List.insertMany(defaultLists.map((title, index) => ({ title, boardId: newBoard._id, order: index })));
+
         return res.status(201).json({
             message: "Board created successfully",
             success: true,
-            board: newBoard
-
-            // the 3 default list will be added later
+            board: newBoard,
+            lists: newLists
         });
 
     } catch (error) {
@@ -54,7 +56,11 @@ export const getBoardById = async (req, res) => {
         if (!isMember) {
             return res.status(403).json({ message: "Access denied — you are not a member of this board", success: false });
         }
-        return res.status(200).json({ success: true, board });
+        const lists = await List.find({ boardId }).sort({ order: 1 });
+        const listIds = lists.map((list) => list._id);
+        const cards = await Card.find({ listId: { $in: listIds } }).sort({ order: 1 });
+
+        return res.status(200).json({ success: true, board, lists, cards });
 
     } catch (error) {
         console.log(error);
