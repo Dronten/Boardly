@@ -98,6 +98,37 @@ export const updateBoard = async (req, res) => {
     }
 }
 
+export const getMemberList = async (req, res) => {
+    try {
+        const { boardId } = req.params;
+
+        const board = await Board.findById(boardId).populate("members.userId", "userName email");
+        if (!board) {
+            return res.status(404).json({ message: "Board not found", success: false });
+        }
+
+        const isMember = board.members.some((member) => member.userId?._id.toString() === req.userId);
+        if (!isMember) {
+            return res.status(403).json({ message: "Access denied ! You are not a member of this board", success: false });
+        }
+
+        const members = board.members
+            .filter((member) => member.userId)
+            .map((member) => ({
+                userId: member.userId._id,
+                userName: member.userId.userName,
+                email: member.userId.email,
+                role: member.role
+            }));
+
+        return res.status(200).json({ success: true, members })
+
+    } catch (error) {
+        console.log(error);
+        return res.status(500).json({ message: "Internal server error", success: false });
+    }
+}
+
 export const addMember = async (req, res) => {
     try {
         const { boardId } = req.params;
