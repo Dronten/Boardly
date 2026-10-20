@@ -1,11 +1,17 @@
-import "./App.css";
-import { Button } from "@/components/ui/button";
+import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import Login from "@/pages/Login";
+import Signup from "@/pages/Signup";
 
 function App() {
     return (
-        <div className="min-h-screen bg-amber-700 flex justify-center items-center">
-            <Button>Boardly</Button>
-        </div>
+        <BrowserRouter>
+            <Routes>
+                <Route path="/" element={<Navigate to="/login/" replace />} />
+                <Route path="/login" element={<Login />} />
+                <Route path="/signup" element={<Signup />} />
+            </Routes>
+        </BrowserRouter>
     );
 }
+
 export default App;
