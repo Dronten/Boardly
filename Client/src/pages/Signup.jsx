@@ -1,4 +1,5 @@
 import { Button } from "@/components/ui/button";
+import { Link } from "react-router-dom";
 function Signup() {
     return (
         <div className="min-h-screen flex items-center justify-center bg-gray-50 px-4">
@@ -65,6 +66,13 @@ function Signup() {
                         Signup
                     </Button>
                 </form>
+
+                <p className="mt-6 text-center text-sm text-gray-600">
+                    Already have an account?{" "}
+                    <Link to="/login" className="font font-semibold">
+                        Login
+                    </Link>
+                </p>
             </div>
         </div>
     );
