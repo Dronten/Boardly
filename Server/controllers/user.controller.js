@@ -73,12 +73,18 @@ export const login = async (req, res) => {
 
 export const logout = async (req, res) => {
     try {
-        // Clearing the token cookie to log the user out
-        return res.status(200).cookie("token", '', { maxAge: 0 }).json({
+        return res.status(200).clearCookie("token", {
+            httpOnly: true,
+            secure: process.env.NODE_ENV === "production",
+            sameSite: "strict"
+        }).json({
             message: "Logged out successfully",
             success: true
         });
     } catch (error) {
-        return res.status(500).json({ message: error.message, success: false });
+        return res.status(500).json({
+            message: error.message,
+            success: false
+        });
     }
-}
+};

@@ -26,7 +26,7 @@ function Signup() {
 
             if (response.data.success) {
                 navigate("/home");
-            } else {
+            } else{
                 setError(response.data.message || "Signup failed");
             }
         } catch (error) {

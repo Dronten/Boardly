@@ -1,8 +1,11 @@
 import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import api from "@/lib/api";
 import { Button } from "@/components/ui/button";
 
 function Home() {
+    const navigate = useNavigate();
+
     const [boards, setBoards] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState("");
@@ -56,8 +59,26 @@ function Home() {
         }
     };
 
+    const handleLogout = async () => {
+        try {
+            const response = await api.post("/user/logout");
+
+            if (response.data.success) {
+                navigate("/login");
+            }
+        } catch (error) {
+            setError(
+                error.response?.data?.message ||
+                    "Unable to Log out. Please try again.",
+            );
+        }
+    };
+
     return (
         <div className="min-h-screen bg-gray-50 p-8">
+            <div className="mb-6 flex justify-end">
+                <Button onClick={handleLogout}>Logout</Button>
+            </div>
             <h1 className="text-3xl font-bold text-gray-900">
                 Welcome To Boardly
             </h1>
