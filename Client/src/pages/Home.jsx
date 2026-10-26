@@ -14,6 +14,9 @@ function Home() {
 
     useEffect(() => {
         const fetchBoards = async () => {
+            setLoading(true);
+            setError("");
+            
             try {
                 const response = await api.get("/board");
                 if (response.data.success) {
