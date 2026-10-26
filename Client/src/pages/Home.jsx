@@ -139,7 +139,8 @@ function Home() {
                         {boards.map((board) => (
                             <div
                                 key={board._id}
-                                className="rounded-xl border border-gray-200 bg-white p-5 shadow-sm"
+                                onClick={() => navigate(`/board/${board._id}`)}
+                                className="rounded-xl border border-gray-200 bg-white p-5 shadow-sm cursor-pointer hover:shadow-md transition-shadow"
                             >
                                 <h3 className="font-semibold text-gray-900">
                                     {board.title}
