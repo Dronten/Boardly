@@ -31,6 +31,16 @@ function Board() {
 
     const [cardSubmitting, setCardSubmitting] = useState(false);
 
+    // Member panel state
+    const [isMemberPanelOpen, setIsMemberPanelOpen] = useState(false);
+    const [members, setMembers] = useState([]);
+    const [memberEmail, setMemberEmail] = useState("");
+    const [memberLoading, setMemberLoading] = useState(false);
+    const [memberSubmitting, setMemberSubmitting] = useState(false);
+    const [memberError, setMemberError] = useState("");
+    const [memberMessage, setMemberMessage] = useState("");
+    const [currentUserId, setCurrentUserId] = useState(null);
+
     // Shared message for list and card actions
     const [actionError, setActionError] = useState("");
 
@@ -252,6 +262,46 @@ function Board() {
             setCardSubmitting(false);
         }
     };
+
+    // Fetch Board members
+    const fetchMembers = async () => {
+        setMemberLoading(true);
+        setMemberError("");
+
+        try {
+            const [membersResponse, userResponse] = await Promise.all([
+                api.get(`/board/${boardId}/memberslist`),
+                api.get("/user/check-auth"),
+            ]);
+            setMembers(membersResponse.data.members);
+            setCurrentUserId(userResponse.data.userId);
+        } catch (error) {
+            setMemberError(
+                error.response?.data?.message || "Failed to fetch members."
+            );
+        } finally {
+            setMemberLoading(false);
+        }
+    };
+
+    // Open or close the member panel
+    const handleToggleMemberPanel = ()=>{
+        if(isMemberPanelOpen){
+            setIsMemberPanelOpen(false);
+            return;
+        }
+
+        setIsMemberPanelOpen(true);
+        setMemberMessage("");
+        fetchMembers();
+    };
+
+    // Add a member using their email
+    const handleAddMember = async (e)=>{
+        e.preventDefault();
+
+        const email = memberEmail.trim();
+    }
 
     if (loading) {
         return <p className="p-8">Loading Board...</p>;
