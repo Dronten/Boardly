@@ -277,7 +277,7 @@ function Board() {
             setCurrentUserId(userResponse.data.userId);
         } catch (error) {
             setMemberError(
-                error.response?.data?.message || "Failed to fetch members."
+                error.response?.data?.message || "Failed to fetch members.",
             );
         } finally {
             setMemberLoading(false);
@@ -285,8 +285,8 @@ function Board() {
     };
 
     // Open or close the member panel
-    const handleToggleMemberPanel = ()=>{
-        if(isMemberPanelOpen){
+    const handleToggleMemberPanel = () => {
+        if (isMemberPanelOpen) {
             setIsMemberPanelOpen(false);
             return;
         }
@@ -297,11 +297,79 @@ function Board() {
     };
 
     // Add a member using their email
-    const handleAddMember = async (e)=>{
+    const handleAddMember = async (e) => {
         e.preventDefault();
 
         const email = memberEmail.trim();
-    }
+
+        if (!email || memberSubmitting) return;
+
+        setMemberSubmitting(true);
+        setMemberError("");
+        setMemberMessage("");
+
+        try {
+            const response = await api.post(`/board/${boardId}/members`, {
+                email,
+            });
+
+            setMemberEmail("");
+            setMemberMessage(
+                response.data.message || "Member added successfully.",
+            );
+
+            await fetchMembers();
+        } catch (error) {
+            setMemberError(
+                error.response?.data?.message || "Failed to add member.",
+            );
+        } finally {
+            setMemberSubmitting(false);
+        }
+    };
+
+    // Remove a member
+    const handleRemoveMember = async (userId) => {
+        if (memberSubmitting) return;
+
+        const confirmed = window.confirm(
+            "Are you sure you want to remove this Member?",
+        );
+
+        if (!confirmed) return;
+
+        setMemberSubmitting(true);
+        setMemberError("");
+        setMemberMessage("");
+
+        try {
+            const response = await api.delete(
+                `/board/${boardId}/members/${userId}`,
+            );
+
+            setMembers((prev) =>
+                prev.filter(
+                    (member) => String(member.userId) !== String(userId),
+                ),
+            );
+
+            setMemberMessage(
+                response.data.message || "Member removed Successfully.",
+            );
+        } catch (error) {
+            setMemberError(
+                error.response?.data?.message || "Failed to remove member.",
+            );
+        } finally {
+            setMemberSubmitting(false);
+        }
+    };
+
+    const isCurrentUserAdmin = members.some(
+        (member) =>
+            String(member.userId) === String(currentUserId) &&
+            member.role === "admin",
+    );
 
     if (loading) {
         return <p className="p-8">Loading Board...</p>;
@@ -381,6 +449,161 @@ function Board() {
                         Edit
                     </button>
                 </div>
+            )}
+
+            {/* Members button */}
+            <div className="mt-4">
+                <button
+                    type="button"
+                    onClick={handleToggleMemberPanel}
+                    className="rounded-lg border border-gray-300 bg-white px-4 py-2 text-gray-900 hover:bg-gray-100"
+                >
+                    {isMemberPanelOpen ? "Close Members" : "Members"}
+                </button>
+            </div>
+
+            {/*Members side panel */}
+            {isMemberPanelOpen && (
+                <>
+                    <button
+                        type="button"
+                        aria-label="Close members panel"
+                        onClick={() => setIsMemberPanelOpen(false)}
+                        className="fixed inset-0 z-40 bg-black/30"
+                    />
+
+                    <aside className="fixed inset-y-0 right-0 z-50 w-full max-w-sm overflow-y-auto border-l border-gray-200 bg-white p-6 shadow-xl">
+                        <div className="flex items-center justify-between gap-3">
+                            <h2 className="text-xl font-bold text-gray-900">
+                                Board Members
+                            </h2>
+
+                            <button
+                                type="button"
+                                onClick={() => setIsMemberPanelOpen(false)}
+                                className="rounded border px-3 py-1 "
+                            >
+                                Close
+                            </button>
+                        </div>
+
+                        {/* Add member form: admins only */}
+                        {isCurrentUserAdmin && (
+                            <form
+                                onSubmit={handleAddMember}
+                                className="mt-6 space-y-3"
+                            >
+                                <label
+                                    htmlFor="member-email"
+                                    className="block text-sm font-medium text-gray-700"
+                                >
+                                    Add member by email
+                                </label>
+
+                                <input
+                                    id="member-email"
+                                    type="email"
+                                    value={memberEmail}
+                                    onChange={(e) =>
+                                        setMemberEmail(e.target.value)
+                                    }
+                                    placeholder="Enter email"
+                                    className="w-full rounded-lg border border-gray-300 px-3 py-2 text-gray-900"
+                                    required
+                                />
+
+                                <button
+                                    type="submit"
+                                    disabled={
+                                        memberSubmitting || !memberEmail.trim()
+                                    }
+                                    className="w-full rounded-lg bg-blue-600 px-4 py-2 text-white disabled:opacity-50"
+                                >
+                                    {memberSubmitting
+                                        ? "Please wait..."
+                                        : "Add Member"}
+                                </button>
+                            </form>
+                        )}
+
+                        {/*Success and error messages*/}
+                        {memberMessage && (
+                            <p
+                                role="status"
+                                className="mt-4 text-sm text-gray-700"
+                            >
+                                {memberMessage}
+                            </p>
+                        )}
+
+                        {memberError && (
+                            <p
+                                role="alert"
+                                className="mt-4 text-sm text-red-600"
+                            >
+                                {memberError}
+                            </p>
+                        )}
+
+                        {/*Member list */}
+                        <div className="mt-6 space-y-3">
+                            <h3 className="font-semibold text-gray-900">
+                                Member List
+                            </h3>
+
+                            {memberLoading ? (
+                                <p className="text-sm text-gray-500">
+                                    Loading members...
+                                </p>
+                            ) : members.length === 0 ? (
+                                <p className="text-sm text-gray-500">
+                                    No members found.
+                                </p>
+                            ) : (
+                                members.map((member) => (
+                                    <div
+                                        key={member.userId}
+                                        className="flex items-start justify-between gap-3 rounded-lg border border-gray-200 p-3"
+                                    >
+                                        <div className="min-w-0">
+                                            <div className="flex flex-wrap items-center gap-2">
+                                                <p className="wrap-break-word font-medium text-gray-900">
+                                                    {member.userName}
+                                                </p>
+
+                                                {member.role === "admin" && (
+                                                    <span className="rounded bg-blue-100 px-2 py-0.5 text-xs font-medium text-blue-700">
+                                                        Admin
+                                                    </span>
+                                                )}
+                                            </div>
+
+                                            <p className="mt-1 break-all text-sm text-gray-600">
+                                                {member.email}
+                                            </p>
+                                        </div>
+
+                                        {isCurrentUserAdmin &&
+                                            member.role !== "admin" && (
+                                                <button
+                                                    type="button"
+                                                    disabled={memberSubmitting}
+                                                    onClick={() =>
+                                                        handleRemoveMember(
+                                                            member.userId,
+                                                        )
+                                                    }
+                                                    className="shrink-0 text-sm text-red-600 hover:underline disabled:opacity-50"
+                                                >
+                                                    Remove
+                                                </button>
+                                            )}
+                                    </div>
+                                ))
+                            )}
+                        </div>
+                    </aside>
+                </>
             )}
 
             <form onSubmit={handleCreateList} className="mt-6 flex gap-3">
