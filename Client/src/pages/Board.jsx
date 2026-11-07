@@ -14,6 +14,11 @@ function Board() {
     const [isEditingBoardTitle, setIsEditingBoardTitle] = useState(false);
     const [editedBoardTitle, setEditedBoardTitle] = useState("");
 
+    // Delete Board state
+    const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+    const [deleteSubmitting, setDeleteSubmitting] = useState(false);
+    const [deleteError, setDeleteError] = useState("");
+
     // List form state
     const [newListTitle, setNewListTitle] = useState("");
     const [editingListId, setEditingListId] = useState(null);
@@ -74,6 +79,7 @@ function Board() {
         fetchBoard();
     }, [boardId]);
 
+    // Update Board title
     const handleUpdateBoardTitle = async (e) => {
         e.preventDefault();
         setActionError("");
@@ -88,6 +94,26 @@ function Board() {
             setBoard(response.data.board);
             setIsEditingBoardTitle(false);
         } catch (error) {}
+    };
+
+    // Delete the Board
+    const handleDeleteBoard = async () => {
+        if (deleteSubmitting) return;
+
+        setDeleteSubmitting(true);
+        setDeleteError("");
+
+        try {
+            await api.delete(`board/${boardId}`);
+
+            navigate("/home");
+        } catch (error) {
+            setDeleteError(
+                error.response?.data?.message || "Failed to delete board.",
+            );
+        } finally {
+            setDeleteSubmitting(false);
+        }
     };
 
     // Create a list
@@ -447,6 +473,17 @@ function Board() {
                         }}
                     >
                         Edit
+                    </button>
+
+                    <button
+                        type="button"
+                        onClick={() => {
+                            setDeleteError("");
+                            setIsDeleteDialogOpen(true);
+                        }}
+                        className="ml-auto rounded-lg bg-red-500 px-4 py-2 font-medium text-white transition hover:bg-red-700"
+                    >
+                        Delete Board
                     </button>
                 </div>
             )}
@@ -880,6 +917,75 @@ function Board() {
                     </div>
                 ))}
             </div>
+            {isDeleteDialogOpen && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+                    <div
+                        role="dialog"
+                        aria-modal="true"
+                        aria-labelledby="delete-board-title"
+                        className="w-full max-w-md rounded-2xl bg-white p-6 shadow-2xl"
+                    >
+                        <div className="mb-4 flex items-center gap-3">
+                            <div className="flex h-11 w-11 items-center justify-center rounded-full bg-red-100 text-red-600">
+                                !
+                            </div>
+
+                            <div>
+                                <h2
+                                    id="delete-board-title"
+                                    className="text-xl font-bold text-gray-900"
+                                >
+                                    Are you sure you want to delete this board?
+                                </h2>
+                            </div>
+                        </div>
+                        <p className="mb-5 text-sm leading-6 text-gray-600">
+                            Are you sure you want to delete{" "}
+                            <span className="font-semibold text-gray-900">
+                                {board.title}
+                            </span>
+                            ? All lists and cards inside this board will also be
+                            deleted
+                        </p>
+
+                        {deleteError && (
+                            <p
+                                role="alert"
+                                className="mb-4 rounded-lg bg-red-50 p-3 text-sm text-red-700
+                            "
+                            >
+                                {deleteError}
+                            </p>
+                        )}
+
+                        <div className="flex justify-end gap-3">
+                            <button
+                                type="button"
+                                disabled={deleteSubmitting}
+                                onClick={() => {
+                                    setIsDeleteDialogOpen(false);
+                                    setDeleteError("");
+                                }}
+                                className="rounded-lg border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 transition hover:bg-gray-50 disabled:opacity-50"
+                            >
+                                Cancel
+                            </button>
+
+                            <button
+                                type="button"
+                                disabled={deleteSubmitting}
+                                onClick={handleDeleteBoard}
+                                className="rounded-lg bg-red-600 px-4 py-2
+                             text-sm font-medium text-white transition hover:bg-red-700 disabled:cursor-not-allowed disabled:opacity-50"
+                            >
+                                {deleteSubmitting
+                                    ? "Deleting..."
+                                    : "Delete Board"}
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     );
 }
