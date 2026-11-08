@@ -1,8 +1,10 @@
 import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import api from "@/lib/api";
+import { DragDropProvider } from "@dnd-kit/react";
+import { SortableCard, DroppableList } from "@/hooks/useDragAndDrop";
 
-function Board() {
+const Board = () => {
     const { boardId } = useParams();
     const navigate = useNavigate();
 
@@ -669,254 +671,286 @@ function Board() {
                 </p>
             )}
 
-            <div className="mt-8 flex gap-4 overflow-x-auto pb-4">
-                {lists.map((list) => (
-                    <div
-                        key={list._id}
-                        className="w-72 shrink-0 rounded-xl border border-gray-200 bg-white p-4 shadow-sm"
-                    >
-                        {editingListId === list._id ? (
-                            <form
-                                onSubmit={(e) => {
-                                    e.preventDefault();
-                                    handleUpdateList(list._id);
-                                }}
-                                className="flex gap-2"
-                            >
-                                <input
-                                    autoFocus
-                                    value={editingListTitle}
-                                    onChange={(e) =>
-                                        setEditingListTitle(e.target.value)
-                                    }
-                                    maxLength={100}
-                                    aria-label="Edit list title"
-                                    className="min-w-0 flex-1 rounded border border-gray-300 bg-white px-2 py-1 text-gray-900"
-                                />
-                                <button
-                                    type="submit"
-                                    disabled={
-                                        listSubmitting ||
-                                        !editingListTitle.trim()
-                                    }
-                                    className="text-sm font-medium text-blue-600 disabled:opacity-50"
-                                >
-                                    Save
-                                </button>
-
-                                <button
-                                    type="button"
-                                    disabled={listSubmitting}
-                                    onClick={() => {
-                                        setEditingListId(null);
-                                        setEditingListTitle("");
+            <DragDropProvider>
+                <div className="mt-8 flex gap-4 overflow-x-auto pb-4">
+                    {lists.map((list) => (
+                        <div
+                            key={list._id}
+                            className="w-72 shrink-0 rounded-xl border border-gray-200 bg-white p-4 shadow-sm"
+                        >
+                            {editingListId === list._id ? (
+                                <form
+                                    onSubmit={(e) => {
+                                        e.preventDefault();
+                                        handleUpdateList(list._id);
                                     }}
-                                    className="text-sm text-gray-500"
+                                    className="flex gap-2"
                                 >
-                                    Cancel
-                                </button>
-                            </form>
-                        ) : (
-                            <div className="flex items-center justify-between gap-2">
-                                <h2 className="font-semibold text-gray-900">
-                                    {list.title}
-                                </h2>
-                                <div className="flex gap-3">
+                                    <input
+                                        autoFocus
+                                        value={editingListTitle}
+                                        onChange={(e) =>
+                                            setEditingListTitle(e.target.value)
+                                        }
+                                        maxLength={100}
+                                        aria-label="Edit list title"
+                                        className="min-w-0 flex-1 rounded border border-gray-300 bg-white px-2 py-1 text-gray-900"
+                                    />
+                                    <button
+                                        type="submit"
+                                        disabled={
+                                            listSubmitting ||
+                                            !editingListTitle.trim()
+                                        }
+                                        className="text-sm font-medium text-blue-600 disabled:opacity-50"
+                                    >
+                                        Save
+                                    </button>
+
                                     <button
                                         type="button"
                                         disabled={listSubmitting}
                                         onClick={() => {
-                                            setEditingListId(list._id);
-                                            setEditingListTitle(list.title);
-                                            setActionError("");
+                                            setEditingListId(null);
+                                            setEditingListTitle("");
                                         }}
-                                        className="text-sm text-blue-600 hover:underline"
+                                        className="text-sm text-gray-500"
                                     >
-                                        Edit
+                                        Cancel
+                                    </button>
+                                </form>
+                            ) : (
+                                <div className="flex items-center justify-between gap-2">
+                                    <h2 className="font-semibold text-gray-900">
+                                        {list.title}
+                                    </h2>
+                                    <div className="flex gap-3">
+                                        <button
+                                            type="button"
+                                            disabled={listSubmitting}
+                                            onClick={() => {
+                                                setEditingListId(list._id);
+                                                setEditingListTitle(list.title);
+                                                setActionError("");
+                                            }}
+                                            className="text-sm text-blue-600 hover:underline"
+                                        >
+                                            Edit
+                                        </button>
+
+                                        <button
+                                            type="button"
+                                            disabled={listSubmitting}
+                                            onClick={() =>
+                                                handleDeleteList(list._id)
+                                            }
+                                            className="text-sm text-red-600 hover:underline"
+                                        >
+                                            Delete
+                                        </button>
+                                    </div>
+                                </div>
+                            )}
+
+                            <DroppableList listId={list._id}>
+                                <div className="mt-4 space-y-3">
+                                    {cards
+                                        .filter(
+                                            (card) => card.listId === list._id,
+                                        )
+                                        .sort((a, b) => a.order - b.order)
+                                        .map((card, index) => (
+                                            <SortableCard
+                                                key={card._id}
+                                                card={card}
+                                                index={index}
+                                                listId={list._id}
+                                            >
+                                                <div
+                                                    key={card._id}
+                                                    className="rounded-md border p-3"
+                                                >
+                                                    {editingCardId ===
+                                                    card._id ? (
+                                                        <div className="space-y-2">
+                                                            <input
+                                                                value={
+                                                                    editingCardTitle
+                                                                }
+                                                                onChange={(e) =>
+                                                                    setEditingCardTitle(
+                                                                        e.target
+                                                                            .value,
+                                                                    )
+                                                                }
+                                                                placeholder="Card title"
+                                                                className="w-full rounded border p-2"
+                                                            />
+                                                            <textarea
+                                                                value={
+                                                                    editingCardDescription
+                                                                }
+                                                                onChange={(e) =>
+                                                                    setEditingCardDescription(
+                                                                        e.target
+                                                                            .value,
+                                                                    )
+                                                                }
+                                                                placeholder="Description"
+                                                                className="w-full rounded border p-2"
+                                                            />
+                                                            <button
+                                                                type="button"
+                                                                disabled={
+                                                                    cardSubmitting
+                                                                }
+                                                                onClick={() =>
+                                                                    handleUpdateCard(
+                                                                        list._id,
+                                                                        card._id,
+                                                                    )
+                                                                }
+                                                            >
+                                                                Save
+                                                            </button>{" "}
+                                                            <button
+                                                                type="button"
+                                                                onClick={() => {
+                                                                    setEditingCardId(
+                                                                        null,
+                                                                    );
+                                                                    setEditingCardTitle(
+                                                                        "",
+                                                                    );
+                                                                    setEditingCardDescription(
+                                                                        "",
+                                                                    );
+                                                                }}
+                                                            >
+                                                                Cancel
+                                                            </button>
+                                                        </div>
+                                                    ) : (
+                                                        <>
+                                                            <h3 className="font-medium">
+                                                                {card.title}
+                                                            </h3>
+                                                            {card.description && (
+                                                                <p className="mt-1 text-sm text-gray-600">
+                                                                    {
+                                                                        card.description
+                                                                    }
+                                                                </p>
+                                                            )}
+
+                                                            <div className="mt-3 flex gap-3">
+                                                                <button
+                                                                    type="button"
+                                                                    onClick={() => {
+                                                                        setEditingCardId(
+                                                                            card._id,
+                                                                        );
+                                                                        setEditingCardTitle(
+                                                                            card.title,
+                                                                        );
+                                                                        setEditingCardDescription(
+                                                                            card.description ||
+                                                                                "",
+                                                                        );
+                                                                    }}
+                                                                >
+                                                                    Edit
+                                                                </button>
+
+                                                                <button
+                                                                    type="button"
+                                                                    disabled={
+                                                                        cardSubmitting
+                                                                    }
+                                                                    onClick={() =>
+                                                                        handleDeleteCard(
+                                                                            list._id,
+                                                                            card._id,
+                                                                        )
+                                                                    }
+                                                                >
+                                                                    Delete
+                                                                </button>
+                                                            </div>
+                                                        </>
+                                                    )}
+                                                </div>
+                                            </SortableCard>
+                                        ))}
+                                </div>
+                            </DroppableList>
+                            {newCardListId === list._id ? (
+                                <form
+                                    onSubmit={(e) =>
+                                        handleCreateCard(e, list._id)
+                                    }
+                                    className="mt-3 w-full space-y-2"
+                                >
+                                    <input
+                                        value={newCardTitle}
+                                        onChange={(e) =>
+                                            setNewCardTitle(e.target.value)
+                                        }
+                                        placeholder="Card Title"
+                                        className="w-full rounded-lg border p-2"
+                                        required
+                                    />
+
+                                    <textarea
+                                        value={newCardDescription}
+                                        onChange={(e) =>
+                                            setNewCardDescription(
+                                                e.target.value,
+                                            )
+                                        }
+                                        placeholder="Description (optional)"
+                                        className="w-full rounded-lg border p-2"
+                                    />
+
+                                    <button
+                                        type="submit"
+                                        disabled={cardSubmitting}
+                                        className="w-full rounded-lg bg-blue-600 px-3 py-2 text-white disabled:opacity-50"
+                                    >
+                                        {cardSubmitting
+                                            ? "Adding..."
+                                            : "Add Card"}
                                     </button>
 
                                     <button
                                         type="button"
-                                        disabled={listSubmitting}
-                                        onClick={() =>
-                                            handleDeleteList(list._id)
-                                        }
-                                        className="text-sm text-red-600 hover:underline"
+                                        className="w-full rounded-lg border px-3 py-2"
+                                        onClick={() => {
+                                            setNewCardListId(null);
+                                            setNewCardTitle("");
+                                            setNewCardDescription("");
+                                        }}
                                     >
-                                        Delete
+                                        Cancel
                                     </button>
-                                </div>
-                            </div>
-                        )}
-
-                        <div className="mt-4 space-y-3">
-                            {cards
-                                .filter((card) => card.listId === list._id)
-                                .sort((a, b) => a.order - b.order)
-                                .map((card) => (
-                                    <div
-                                        key={card._id}
-                                        className="rounded-md border p-3"
-                                    >
-                                        {editingCardId === card._id ? (
-                                            <div className="space-y-2">
-                                                <input
-                                                    value={editingCardTitle}
-                                                    onChange={(e) =>
-                                                        setEditingCardTitle(
-                                                            e.target.value,
-                                                        )
-                                                    }
-                                                    placeholder="Card title"
-                                                    className="w-full rounded border p-2"
-                                                />
-                                                <textarea
-                                                    value={
-                                                        editingCardDescription
-                                                    }
-                                                    onChange={(e) =>
-                                                        setEditingCardDescription(
-                                                            e.target.value,
-                                                        )
-                                                    }
-                                                    placeholder="Description"
-                                                    className="w-full rounded border p-2"
-                                                />
-                                                <button
-                                                    type="button"
-                                                    disabled={cardSubmitting}
-                                                    onClick={() =>
-                                                        handleUpdateCard(
-                                                            list._id,
-                                                            card._id,
-                                                        )
-                                                    }
-                                                >
-                                                    Save
-                                                </button>{" "}
-                                                <button
-                                                    type="button"
-                                                    onClick={() => {
-                                                        setEditingCardId(null);
-                                                        setEditingCardTitle("");
-                                                        setEditingCardDescription(
-                                                            "",
-                                                        );
-                                                    }}
-                                                >
-                                                    Cancel
-                                                </button>
-                                            </div>
-                                        ) : (
-                                            <>
-                                                <h3 className="font-medium">
-                                                    {card.title}
-                                                </h3>
-                                                {card.description && (
-                                                    <p className="mt-1 text-sm text-gray-600">
-                                                        {card.description}
-                                                    </p>
-                                                )}
-
-                                                <div className="mt-3 flex gap-3">
-                                                    <button
-                                                        type="button"
-                                                        onClick={() => {
-                                                            setEditingCardId(
-                                                                card._id,
-                                                            );
-                                                            setEditingCardTitle(
-                                                                card.title,
-                                                            );
-                                                            setEditingCardDescription(
-                                                                card.description ||
-                                                                    "",
-                                                            );
-                                                        }}
-                                                    >
-                                                        Edit
-                                                    </button>
-
-                                                    <button
-                                                        type="button"
-                                                        disabled={
-                                                            cardSubmitting
-                                                        }
-                                                        onClick={() =>
-                                                            handleDeleteCard(
-                                                                list._id,
-                                                                card._id,
-                                                            )
-                                                        }
-                                                    >
-                                                        Delete
-                                                    </button>
-                                                </div>
-                                            </>
-                                        )}
-                                    </div>
-                                ))}
-                        </div>
-                        {newCardListId === list._id ? (
-                            <form
-                                onSubmit={(e) => handleCreateCard(e, list._id)}
-                                className="mt-3 w-full space-y-2"
-                            >
-                                <input
-                                    value={newCardTitle}
-                                    onChange={(e) =>
-                                        setNewCardTitle(e.target.value)
-                                    }
-                                    placeholder="Card Title"
-                                    className="w-full rounded-lg border p-2"
-                                    required
-                                />
-
-                                <textarea
-                                    value={newCardDescription}
-                                    onChange={(e) =>
-                                        setNewCardDescription(e.target.value)
-                                    }
-                                    placeholder="Description (optional)"
-                                    className="w-full rounded-lg border p-2"
-                                />
-
-                                <button
-                                    type="submit"
-                                    disabled={cardSubmitting}
-                                    className="w-full rounded-lg bg-blue-600 px-3 py-2 text-white disabled:opacity-50"
-                                >
-                                    {cardSubmitting ? "Adding..." : "Add Card"}
-                                </button>
-
+                                </form>
+                            ) : (
                                 <button
                                     type="button"
-                                    className="w-full rounded-lg border px-3 py-2"
+                                    className="mt-3 w-full rounded-lg border px-3 py-2 text-left hover:bg-gray-50"
                                     onClick={() => {
-                                        setNewCardListId(null);
+                                        setNewCardListId(list._id);
                                         setNewCardTitle("");
                                         setNewCardDescription("");
                                     }}
                                 >
-                                    Cancel
+                                    + Add Card
                                 </button>
-                            </form>
-                        ) : (
-                            <button
-                                type="button"
-                                className="mt-3 w-full rounded-lg border px-3 py-2 text-left hover:bg-gray-50"
-                                onClick={() => {
-                                    setNewCardListId(list._id);
-                                    setNewCardTitle("");
-                                    setNewCardDescription("");
-                                }}
-                            >
-                                + Add Card
-                            </button>
-                        )}
-                    </div>
-                ))}
-            </div>
+                            )}
+                        </div>
+                    ))}
+                </div>
+            </DragDropProvider>
             {isDeleteDialogOpen && (
                 <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
                     <div
@@ -988,6 +1022,6 @@ function Board() {
             )}
         </div>
     );
-}
+};
 
 export default Board;
