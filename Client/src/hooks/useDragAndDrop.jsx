@@ -1,5 +1,6 @@
 import { useSortable } from "@dnd-kit/react/sortable";
 import { useDroppable } from "@dnd-kit/react";
+import { CollisionPriority } from "@dnd-kit/abstract";
 
 // function to drag and sort card within or between lists
 export const SortableCard = ({ card, index, listId, children }) => {
@@ -26,6 +27,7 @@ export const DroppableList = ({ listId, children }) => {
         id: listId,
         type: "list",
         accept: "card",
+        collisionPriority: CollisionPriority.Low,
     });
 
     return (

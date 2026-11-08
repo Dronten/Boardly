@@ -3,6 +3,7 @@ import { useParams, useNavigate } from "react-router-dom";
 import api from "@/lib/api";
 import { DragDropProvider } from "@dnd-kit/react";
 import { SortableCard, DroppableList } from "@/hooks/useDragAndDrop";
+import { isSortable } from "@dnd-kit/react/sortable";
 
 const Board = () => {
     const { boardId } = useParams();
@@ -398,6 +399,35 @@ const Board = () => {
             String(member.userId) === String(currentUserId) &&
             member.role === "admin",
     );
+
+    const handleDragEnd = async (event) => {
+        //Ignore cancelled drags and drops outside valid targets
+        if (event.canceled) return;
+
+        const { source, target } = event.operation;
+
+        if (!target || !isSortable(source)) return;
+
+        //Identify where the card started
+        const cardId = String(source.id);
+        const sourceListId = String(source.initialGroup);
+
+        // If we dropped directly on a list , it can be empty list
+        const targetId = String(target.id);
+
+        const droppedOnList = lists.some(
+            (list) => String(list._id) === targetId,
+        );
+
+        //Otherwise, Dnd kit tells us the destination through source.group
+        const destinationListId = droppedOnList
+            ? targetId
+            : String(source.group);
+
+        if(!destinationListId) return;
+
+        ///Get the cards in the orignal list
+    };
 
     if (loading) {
         return <p className="p-8">Loading Board...</p>;
