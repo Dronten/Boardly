@@ -401,32 +401,135 @@ const Board = () => {
     );
 
     const handleDragEnd = async (event) => {
-        //Ignore cancelled drags and drops outside valid targets
+        // Ignore cancelled drags and drops outside valid targets
         if (event.canceled) return;
 
         const { source, target } = event.operation;
 
         if (!target || !isSortable(source)) return;
 
-        //Identify where the card started
+        // Identify where the card started
         const cardId = String(source.id);
         const sourceListId = String(source.initialGroup);
 
-        // If we dropped directly on a list , it can be empty list
+        // If we dropped directly on a list, it may be an empty list
         const targetId = String(target.id);
 
         const droppedOnList = lists.some(
             (list) => String(list._id) === targetId,
         );
 
-        //Otherwise, Dnd kit tells us the destination through source.group
+        // Otherwise, DnD Kit tells us the destination through source.group
         const destinationListId = droppedOnList
             ? targetId
             : String(source.group);
 
-        if(!destinationListId) return;
+        if (!destinationListId) return;
 
-        ///Get the cards in the orignal list
+        // Get the cards in the original list
+        const sourceCards = cards
+            .filter((card) => card.listId === sourceListId)
+            .sort((a, b) => a.order - b.order);
+
+        const movingCard = sourceCards.find((card) => card._id === cardId);
+
+        if (!movingCard) return;
+
+        // Get the destination list's cards
+        const destinationCards =
+            destinationListId === sourceListId
+                ? sourceCards
+                : cards
+                      .filter((card) => card.listId === destinationListId)
+                      .sort((a, b) => a.order - b.order);
+
+        // Remove the moving card from its original position
+        const remainingSourceCards = sourceCards.filter(
+            (card) => card._id !== cardId,
+        );
+
+        const destinationBase =
+            destinationListId === sourceListId
+                ? remainingSourceCards
+                : destinationCards;
+
+        // Dropping on the list itself means append to its end
+        const requestedIndex = droppedOnList
+            ? destinationBase.length
+            : source.index;
+
+        const newOrder = Math.max(
+            0,
+            Math.min(requestedIndex, destinationBase.length),
+        );
+
+        // Nothing changed
+        if (
+            destinationListId === sourceListId &&
+            movingCard.order === newOrder
+        ) {
+            return;
+        }
+
+        // Insert the card at its new position
+        const updatedDestinationCards = [...destinationBase];
+
+        updatedDestinationCards.splice(newOrder, 0, {
+            ...movingCard,
+            listId: destinationListId,
+        });
+
+        //Recalculate the order of affected cards
+        const updateCards =
+            destinationListId === sourceListId
+                ? updatedDestinationCards.map((card, index) => ({
+                      ...card,
+                      order: index,
+                  }))
+                : [
+                      ...remainingSourceCards.map((card, index) => ({
+                          ...card,
+                          order: index,
+                      })),
+                      ...updatedDestinationCards.map((card, index) => ({
+                          ...card,
+                          order: index,
+                      })),
+                  ];
+
+        const unaffectedCards = cards.filter(
+            (card) =>
+                card.listId !== sourceListId &&
+                card.listId !== destinationListId,
+        );
+
+        const nextCards = [...unaffectedCards, ...updatedCards];
+
+        //Save the movement in the backend
+        try {
+            setActionError("");
+
+            const response = await api.post(
+                `/card/${sourceListId}/${cardId}/move`,
+                {
+                    destinationListId,
+                    order: newOrder,
+                },
+            );
+
+            // Use the actula card returned by the backend
+            const finalCards = nextCards.map((card) =>
+                card._id === cardId ? response.data.card : card,
+            );
+            setCards(finalCards);
+        } catch (error) {
+            setActionError(
+                error.response?.data?.message || "Failed to move card",
+            );
+
+            //Restore the previous frontend state
+            setCards([...cards]);
+        }
     };
 
     if (loading) {
@@ -701,7 +804,7 @@ const Board = () => {
                 </p>
             )}
 
-            <DragDropProvider>
+            <DragDropProvider onDragEnd={handleDragEnd}>
                 <div className="mt-8 flex gap-4 overflow-x-auto pb-4">
                     {lists.map((list) => (
                         <div
