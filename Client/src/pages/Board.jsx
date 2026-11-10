@@ -1,10 +1,50 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import api from "@/lib/api";
+import { move } from "@dnd-kit/helpers";
 import { DragDropProvider } from "@dnd-kit/react";
 import { SortableCard, DroppableList } from "@/hooks/useDragAndDrop";
 import { isSortable } from "@dnd-kit/react/sortable";
 
+const groupCardsByList = (cards, lists) => {
+    const groupedCards = {};
+
+    // Create an empty group for every list,
+    // including lists that currently are empty
+    lists.forEach((list) => {
+        groupedCards[String(list._id)] = [];
+    });
+
+    ///Put every card into its corresponding list.
+    cards.forEach((card) => {
+        const listId = String(card.listId);
+
+        if (!groupedCards[listId]) {
+            groupedCards[listId] = [];
+        }
+
+        groupedCards[listId].push({
+            id: String(card._id),
+            card,
+        });
+    });
+
+    // Keep cards in their existing order
+    Object.values(groupedCards).forEach((listCards) => {
+        listCards.sort((a, b) => a.card.order - b.card.order);
+    });
+    return groupedCards;
+};
+
+const flattenGroupedCards = (groupedCards) => {
+    return Object.entries(groupedCards).flatMap(([listId, listCards]) =>
+        listCards.map((item, index) => ({
+            ...item.card,
+            listId,
+            order: index,
+        })),
+    );
+};
 const Board = () => {
     const { boardId } = useParams();
     const navigate = useNavigate();
@@ -52,6 +92,13 @@ const Board = () => {
     // Shared message for list and card actions
     const [actionError, setActionError] = useState("");
 
+    const cardsRef = useRef(cards);
+    const dragStartCardsRef = useRef(null);
+
+    useEffect(() => {
+        cardsRef.current = cards;
+    }, [cards]);
+
     // Load the board, its lists, and its cards
     useEffect(() => {
         const fetchBoard = async () => {
@@ -96,7 +143,12 @@ const Board = () => {
 
             setBoard(response.data.board);
             setIsEditingBoardTitle(false);
-        } catch (error) {}
+        } catch (error) {
+            setError(
+                error.response?.data?.message ||
+                    "Unable to update board title.",
+            );
+        }
     };
 
     // Delete the Board
@@ -400,135 +452,97 @@ const Board = () => {
             member.role === "admin",
     );
 
-    const handleDragEnd = async (event) => {
-        // Ignore cancelled drags and drops outside valid targets
-        if (event.canceled) return;
+    const handleDragOver = (event) => {
+        const { source } = event.operation;
 
+        if (!isSortable(source)) return;
+
+        // Get the latest card data.
+        const currentCards = cardsRef.current;
+
+        // Convert our flat cards into grouped lists.
+        const groupedCards = groupCardsByList(currentCards, lists);
+
+        // Let DnD Kit move the card between groups.
+        const movedCards = move(groupedCards, event);
+
+        // Convert the result back into our normal flat array.
+        const nextCards = flattenGroupedCards(movedCards);
+
+        // Update both the ref and React state.
+        cardsRef.current = nextCards;
+        setCards(nextCards);
+    };
+
+    const handleDragEnd = async (event) => {
         const { source, target } = event.operation;
 
-        if (!target || !isSortable(source)) return;
+        // State before the drag started (saved in onDragStart)
+        const startCards = dragStartCardsRef.current;
+        dragStartCardsRef.current = null;
 
-        // Identify where the card started
+        const rollback = () => {
+            if (startCards) {
+                cardsRef.current = startCards;
+                setCards(startCards);
+            }
+        };
+
+        if (event.canceled || !target || !isSortable(source) || !startCards) {
+            rollback();
+            return;
+        }
+
         const cardId = String(source.id);
-        const sourceListId = String(source.initialGroup);
-
-        // If we dropped directly on a list, it may be an empty list
-        const targetId = String(target.id);
-
-        const droppedOnList = lists.some(
-            (list) => String(list._id) === targetId,
+        const originalCard = startCards.find((c) => String(c._id) === cardId);
+        const movedCard = cardsRef.current.find(
+            (c) => String(c._id) === cardId,
         );
 
-        // Otherwise, DnD Kit tells us the destination through source.group
-        const destinationListId = droppedOnList
-            ? targetId
-            : String(source.group);
+        if (!originalCard || !movedCard) {
+            rollback();
+            return;
+        }
 
-        if (!destinationListId) return;
-
-        // Get the cards in the original list
-        const sourceCards = cards
-            .filter((card) => card.listId === sourceListId)
-            .sort((a, b) => a.order - b.order);
-
-        const movingCard = sourceCards.find((card) => card._id === cardId);
-
-        if (!movingCard) return;
-
-        // Get the destination list's cards
-        const destinationCards =
-            destinationListId === sourceListId
-                ? sourceCards
-                : cards
-                      .filter((card) => card.listId === destinationListId)
-                      .sort((a, b) => a.order - b.order);
-
-        // Remove the moving card from its original position
-        const remainingSourceCards = sourceCards.filter(
-            (card) => card._id !== cardId,
-        );
-
-        const destinationBase =
-            destinationListId === sourceListId
-                ? remainingSourceCards
-                : destinationCards;
-
-        // Dropping on the list itself means append to its end
-        const requestedIndex = droppedOnList
-            ? destinationBase.length
-            : source.index;
-
-        const newOrder = Math.max(
-            0,
-            Math.min(requestedIndex, destinationBase.length),
-        );
+        const sourceListId = String(originalCard.listId);
+        const destinationListId = String(movedCard.listId);
+        const newOrder = movedCard.order;
 
         // Nothing changed
         if (
-            destinationListId === sourceListId &&
-            movingCard.order === newOrder
+            sourceListId === destinationListId &&
+            originalCard.order === newOrder
         ) {
             return;
         }
 
-        // Insert the card at its new position
-        const updatedDestinationCards = [...destinationBase];
-
-        updatedDestinationCards.splice(newOrder, 0, {
-            ...movingCard,
-            listId: destinationListId,
-        });
-
-        //Recalculate the order of affected cards
-        const updateCards =
-            destinationListId === sourceListId
-                ? updatedDestinationCards.map((card, index) => ({
-                      ...card,
-                      order: index,
-                  }))
-                : [
-                      ...remainingSourceCards.map((card, index) => ({
-                          ...card,
-                          order: index,
-                      })),
-                      ...updatedDestinationCards.map((card, index) => ({
-                          ...card,
-                          order: index,
-                      })),
-                  ];
-
-        const unaffectedCards = cards.filter(
-            (card) =>
-                card.listId !== sourceListId &&
-                card.listId !== destinationListId,
-        );
-
-        const nextCards = [...unaffectedCards, ...updatedCards];
-
-        //Save the movement in the backend
         try {
             setActionError("");
 
-            const response = await api.post(
+            const response = await api.patch(
                 `/card/${sourceListId}/${cardId}/move`,
-                {
-                    destinationListId,
-                    order: newOrder,
-                },
+                { destinationListId, order: newOrder },
             );
 
-            // Use the actula card returned by the backend
-            const finalCards = nextCards.map((card) =>
-                card._id === cardId ? response.data.card : card,
+            const updatedCards = cardsRef.current.map((card) =>
+                String(card._id) === cardId
+                    ? {
+                          ...card,
+                          ...response.data.card,
+                          listId: destinationListId,
+                          order: newOrder,
+                      }
+                    : card,
             );
-            setCards(finalCards);
+
+            cardsRef.current = updatedCards;
+            setCards(updatedCards);
         } catch (error) {
+            console.error("Card movement failed:", error);
             setActionError(
-                error.response?.data?.message || "Failed to move card",
+                error.response?.data?.message || "Failed to move card.",
             );
-
-            //Restore the previous frontend state
-            setCards([...cards]);
+            rollback();
         }
     };
 
@@ -586,7 +600,7 @@ const Board = () => {
                     </button>
 
                     <button
-                        type="submit"
+                        type="button"
                         className="rounded-lg border px-3 py-2"
                         onClick={() => setIsEditingBoardTitle(false)}
                     >
@@ -804,7 +818,18 @@ const Board = () => {
                 </p>
             )}
 
-            <DragDropProvider onDragEnd={handleDragEnd}>
+            <DragDropProvider
+                onDragStart={() => {
+                    //Save the original positions before the dragging begins.
+                    dragStartCardsRef.current = cardsRef.current.map(
+                        (card) => ({
+                            ...card,
+                        }),
+                    );
+                }}
+                onDragOver={handleDragOver}
+                onDragEnd={handleDragEnd}
+            >
                 <div className="mt-8 flex gap-4 overflow-x-auto pb-4">
                     {lists.map((list) => (
                         <div
