@@ -2,10 +2,19 @@ import { User } from "../models/user.js";
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
 
+const isProd = process.env.NODE_ENV === "production";
+
+const baseCookie = {
+    httpOnly: true,
+    secure: isProd,
+    sameSite: isProd ? "none" : "strict",
+};
+const cookieOptions = { ...baseCookie, maxAge: 7 * 24 * 60 * 60 * 1000 };
+
 export const register = async (req, res) => {
     try {
         // Extracting user details from the req.body
-        const { userName, email, password, googleId } = req.body;
+        const { userName, email, password,} = req.body;
         if (!userName || !email || !password) {
             return res.status(400).json({ message: "Something is missing", success: false });
         }
@@ -22,13 +31,12 @@ export const register = async (req, res) => {
             userName,
             email,
             password: hashedPassword,
-            googleId
         });
 
         // Assigning a JWT token and sending it as cookie in the response
         const token = jwt.sign({ userId: newUser._id }, process.env.JWT_SECRET, { expiresIn: "7d" });
 
-        return res.status(201).cookie("token", token, { httpOnly: true, secure: process.env.NODE_ENV === "production", sameSite: "strict" }).json({ message: "User created successfully", success: true });
+        return res.status(201).cookie("token", token, cookieOptions).json({ message: "User created successfully", success: true });
 
     } catch (error) {
         return res.status(500).json({ message: error.message, success: false });
@@ -61,10 +69,9 @@ export const login = async (req, res) => {
             _id: user._id,
             userName: user.userName,
             email: user.email,
-            googleId: user.googleId
         };
 
-        return res.status(200).cookie("token", token, { maxAge: 1 * 24 * 60 * 60 * 1000, httpOnly: true, secure: process.env.NODE_ENV === "production", sameSite: "strict" }).json({ message: "Login successful", success: true, user });
+        return res.status(200).cookie("token", token, cookieOptions).json({ message: "Login successful", success: true, user });
 
     } catch (error) {
         return res.status(500).json({ message: error.message, success: false });
@@ -73,14 +80,7 @@ export const login = async (req, res) => {
 
 export const logout = async (req, res) => {
     try {
-        return res.status(200).clearCookie("token", {
-            httpOnly: true,
-            secure: process.env.NODE_ENV === "production",
-            sameSite: "strict"
-        }).json({
-            message: "Logged out successfully",
-            success: true
-        });
+        return res.status(200).clearCookie("token", baseCookie).json({ message: "Logged out successfully", success: true });
     } catch (error) {
         return res.status(500).json({
             message: error.message,
