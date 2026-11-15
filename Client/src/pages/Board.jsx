@@ -164,7 +164,7 @@ const Board = () => {
         setDeleteError("");
 
         try {
-            deleteBoard(boardId);
+            await deleteBoard(boardId);
 
             navigate("/home");
         } catch (error) {
