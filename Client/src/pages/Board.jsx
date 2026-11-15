@@ -11,6 +11,7 @@ import { DragDropProvider } from "@dnd-kit/react";
 import { SortableCard, DroppableList } from "@/hooks/useDragAndDrop";
 import { isSortable } from "@dnd-kit/react/sortable";
 import { createList, deleteList, editListTitle } from "@/services/listService";
+import { createCard, updateCard } from "@/services/cardService";
 
 const groupCardsByList = (cards, lists) => {
     const groupedCards = {};
@@ -273,12 +274,9 @@ const Board = () => {
         setActionError("");
 
         try {
-            const response = await api.post(`/card/${listId}`, {
-                title,
-                description,
-            });
+            const data = await createCard(listId, title, description);
 
-            setCards((prev) => [...prev, response.data.card]);
+            setCards((prev) => [...prev, data.card]);
 
             setNewCardTitle("");
             setNewCardDescription("");
@@ -303,15 +301,10 @@ const Board = () => {
         setActionError("");
 
         try {
-            const response = await api.patch(`/card/${listId}/${cardId}`, {
-                title,
-                description,
-            });
+            const data = await updateCard(listId, cardId, title, description);
 
             setCards((prev) =>
-                prev.map((card) =>
-                    card._id === cardId ? response.data.card : card,
-                ),
+                prev.map((card) => (card._id === cardId ? data.card : card)),
             );
 
             setEditingCardId(null);
@@ -326,6 +319,7 @@ const Board = () => {
         }
     };
 
+    // Delete a card
     const handleDeleteCard = async (listId, cardId) => {
         if (cardSubmitting) return;
 
@@ -336,7 +330,7 @@ const Board = () => {
         setActionError("");
 
         try {
-            await api.delete(`/card/${listId}/${cardId}`);
+            await deleteBoard(listId, cardId);
 
             setCards((prev) => prev.filter((card) => card._id !== cardId));
         } catch (error) {
