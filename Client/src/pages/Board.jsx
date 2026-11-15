@@ -10,6 +10,7 @@ import { move } from "@dnd-kit/helpers";
 import { DragDropProvider } from "@dnd-kit/react";
 import { SortableCard, DroppableList } from "@/hooks/useDragAndDrop";
 import { isSortable } from "@dnd-kit/react/sortable";
+import { createList, deleteList, editListTitle } from "@/services/listService";
 
 const groupCardsByList = (cards, lists) => {
     const groupedCards = {};
@@ -188,10 +189,10 @@ const Board = () => {
         setActionError("");
 
         try {
-            const response = await api.post(`/list/${boardId}`, { title });
+            const data = createList(boardId, title);
 
             setLists((prev) =>
-                [...prev, response.data.list].sort((a, b) => a.order - b.order),
+                [...prev, data.list].sort((a, b) => a.order - b.order),
             );
 
             setNewListTitle("");
@@ -214,14 +215,10 @@ const Board = () => {
         setActionError("");
 
         try {
-            const response = await api.patch(`/list/${boardId}/${listId}`, {
-                title,
-            });
+            const data = editListTitle(boardId, listId, title);
 
             setLists((prev) =>
-                prev.map((list) =>
-                    list._id === listId ? response.data.list : list,
-                ),
+                prev.map((list) => (list._id === listId ? data.list : list)),
             );
 
             setEditingListId(null);
@@ -249,7 +246,7 @@ const Board = () => {
         setActionError("");
 
         try {
-            await api.delete(`/list/${boardId}/${listId}`);
+            await deleteList(boardId, listId);
 
             setLists((prev) => prev.filter((list) => list._id !== listId));
 
@@ -263,6 +260,7 @@ const Board = () => {
         }
     };
 
+    // Create a card
     const handleCreateCard = async (e, listId) => {
         e.preventDefault();
 
@@ -294,6 +292,7 @@ const Board = () => {
         }
     };
 
+    // Update a card
     const handleUpdateCard = async (listId, cardId) => {
         const title = editingCardTitle.trim();
         const description = editingCardDescription.trim();
