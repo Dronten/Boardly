@@ -190,7 +190,7 @@ const Board = () => {
         setActionError("");
 
         try {
-            const data = createList(boardId, title);
+            const data = await createList(boardId, title);
 
             setLists((prev) =>
                 [...prev, data.list].sort((a, b) => a.order - b.order),
@@ -216,7 +216,7 @@ const Board = () => {
         setActionError("");
 
         try {
-            const data = editListTitle(boardId, listId, title);
+            const data = await editListTitle(boardId, listId, title);
 
             setLists((prev) =>
                 prev.map((list) => (list._id === listId ? data.list : list)),
