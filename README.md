@@ -4,7 +4,8 @@ Live Demo : https://boardly-d2hv.onrender.com/home
 
 Known Issue:
 
-1. White screen after creating list and editing list
+1. White screen after creating list and editing list // Fixed
+2. Cookie expires after website is closed. 
 
 
 Ideas:
