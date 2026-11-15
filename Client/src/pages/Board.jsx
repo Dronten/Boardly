@@ -1,6 +1,11 @@
 import { useEffect, useState, useRef } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import api from "@/lib/api";
+import {
+    deleteBoard,
+    getBoard,
+    updateBoardTitle,
+} from "@/services/boardService";
 import { move } from "@dnd-kit/helpers";
 import { DragDropProvider } from "@dnd-kit/react";
 import { SortableCard, DroppableList } from "@/hooks/useDragAndDrop";
@@ -106,15 +111,15 @@ const Board = () => {
             setError("");
 
             try {
-                const response = await api.get(`/board/${boardId}`);
+                const data = await getBoard(boardId);
 
-                if (response.data.success) {
-                    setBoard(response.data.board);
-                    setLists(response.data.lists);
-                    setCards(response.data.cards);
+                if (data.success) {
+                    setBoard(data.board);
+                    setLists(data.lists);
+                    setCards(data.cards);
                 } else {
                     setError(
-                        response.data.message ||
+                        data.message ||
                             "Failed to load Board. Please try again",
                     );
                 }
@@ -139,9 +144,9 @@ const Board = () => {
         if (!title) return;
 
         try {
-            const response = await api.patch(`/board/${boardId}`, { title });
+            const data = await updateBoardTitle(boardId, title);
 
-            setBoard(response.data.board);
+            setBoard(data.board);
             setIsEditingBoardTitle(false);
         } catch (error) {
             setError(
@@ -159,7 +164,7 @@ const Board = () => {
         setDeleteError("");
 
         try {
-            await api.delete(`board/${boardId}`);
+            deleteBoard(boardId);
 
             navigate("/home");
         } catch (error) {
