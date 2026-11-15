@@ -11,3 +11,4 @@ Known Issue:
 Ideas:
 
 1. Design choices (ex girly, for guys etc).
+2. Dark mode ( URGENT )
