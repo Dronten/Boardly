@@ -11,7 +11,7 @@ import { DragDropProvider } from "@dnd-kit/react";
 import { SortableCard, DroppableList } from "@/hooks/useDragAndDrop";
 import { isSortable } from "@dnd-kit/react/sortable";
 import { createList, deleteList, editListTitle } from "@/services/listService";
-import { createCard, updateCard } from "@/services/cardService";
+import { createCard, updateCard, deleteCard } from "@/services/cardService";
 
 const groupCardsByList = (cards, lists) => {
     const groupedCards = {};
@@ -330,7 +330,7 @@ const Board = () => {
         setActionError("");
 
         try {
-            await deleteBoard(listId, cardId);
+            await deleteCard(listId, cardId);
 
             setCards((prev) => prev.filter((card) => card._id !== cardId));
         } catch (error) {

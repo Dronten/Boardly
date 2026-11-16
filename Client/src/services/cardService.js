@@ -16,7 +16,7 @@ export const updateCard = async (listId, cardId, title, description) => {
     return response.data;
 }
 
-export const deleteBoard = async (listId, cardId) => {
+export const deleteCard = async (listId, cardId) => {
     const response = await api.delete(`/card/${listId}/${cardId}`);
     return response.data;
 }
