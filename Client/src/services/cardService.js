@@ -20,3 +20,11 @@ export const deleteCard = async (listId, cardId) => {
     const response = await api.delete(`/card/${listId}/${cardId}`);
     return response.data;
 }
+
+export const moveCard = async (sourceListId, cardId, destinationListId, newOrder) => {
+    const response = await api.patch(
+        `/card/${sourceListId}/${cardId}/move`,
+        { destinationListId, order: newOrder },
+    );
+    return response.data;
+}

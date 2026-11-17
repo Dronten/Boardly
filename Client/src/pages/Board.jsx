@@ -11,7 +11,12 @@ import { DragDropProvider } from "@dnd-kit/react";
 import { SortableCard, DroppableList } from "@/hooks/useDragAndDrop";
 import { isSortable } from "@dnd-kit/react/sortable";
 import { createList, deleteList, editListTitle } from "@/services/listService";
-import { createCard, updateCard, deleteCard } from "@/services/cardService";
+import {
+    createCard,
+    updateCard,
+    deleteCard,
+    moveCard,
+} from "@/services/cardService";
 
 const groupCardsByList = (cards, lists) => {
     const groupedCards = {};
@@ -517,16 +522,18 @@ const Board = () => {
         try {
             setActionError("");
 
-            const response = await api.patch(
-                `/card/${sourceListId}/${cardId}/move`,
-                { destinationListId, order: newOrder },
+            const data = await moveCard(
+                sourceListId,
+                cardId,
+                destinationListId,
+                newOrder,
             );
 
             const updatedCards = cardsRef.current.map((card) =>
                 String(card._id) === cardId
                     ? {
                           ...card,
-                          ...response.data.card,
+                          ...data.card,
                           listId: destinationListId,
                           order: newOrder,
                       }
