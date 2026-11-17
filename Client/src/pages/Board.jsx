@@ -1,6 +1,5 @@
 import { useEffect, useState, useRef } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import api from "@/lib/api";
 import {
     deleteBoard,
     getBoard,
@@ -17,6 +16,8 @@ import {
     deleteCard,
     moveCard,
 } from "@/services/cardService";
+import { addMember, getMembers, removeMember } from "@/services/memberService";
+import { checkAuth } from "@/services/authService";
 
 const groupCardsByList = (cards, lists) => {
     const groupedCards = {};
@@ -353,12 +354,12 @@ const Board = () => {
         setMemberError("");
 
         try {
-            const [membersResponse, userResponse] = await Promise.all([
-                api.get(`/board/${boardId}/memberslist`),
-                api.get("/user/check-auth"),
+            const [memberData, userData] = await Promise.all([
+                getMembers(boardId),
+                checkAuth(),
             ]);
-            setMembers(membersResponse.data.members);
-            setCurrentUserId(userResponse.data.userId);
+            setMembers(memberData.members);
+            setCurrentUserId(userData.userId);
         } catch (error) {
             setMemberError(
                 error.response?.data?.message || "Failed to fetch members.",
@@ -393,14 +394,10 @@ const Board = () => {
         setMemberMessage("");
 
         try {
-            const response = await api.post(`/board/${boardId}/members`, {
-                email,
-            });
+            const data = await addMember(boardId, email);
 
             setMemberEmail("");
-            setMemberMessage(
-                response.data.message || "Member added successfully.",
-            );
+            setMemberMessage(data.message || "Member added successfully.");
 
             await fetchMembers();
         } catch (error) {
@@ -427,9 +424,7 @@ const Board = () => {
         setMemberMessage("");
 
         try {
-            const response = await api.delete(
-                `/board/${boardId}/members/${userId}`,
-            );
+            const data = await removeMember(boardId, userId);
 
             setMembers((prev) =>
                 prev.filter(
@@ -437,9 +432,7 @@ const Board = () => {
                 ),
             );
 
-            setMemberMessage(
-                response.data.message || "Member removed Successfully.",
-            );
+            setMemberMessage(data.message || "Member removed Successfully.");
         } catch (error) {
             setMemberError(
                 error.response?.data?.message || "Failed to remove member.",
