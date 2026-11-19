@@ -159,7 +159,7 @@ const Board = () => {
             setBoard(data.board);
             setIsEditingBoardTitle(false);
         } catch (error) {
-            setError(
+            setActionError(
                 error.response?.data?.message ||
                     "Unable to update board title.",
             );
