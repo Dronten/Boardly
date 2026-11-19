@@ -18,6 +18,8 @@ import {
 } from "@/services/cardService";
 import { addMember, getMembers, removeMember } from "@/services/memberService";
 import { checkAuth } from "@/services/authService";
+import DeleteBoardDialog from "@/components/DeleteBoardDialog";
+import MembersPanel from "@/components/MemberPanel";
 
 const groupCardsByList = (cards, lists) => {
     const groupedCards = {};
@@ -182,6 +184,12 @@ const Board = () => {
         } finally {
             setDeleteSubmitting(false);
         }
+    };
+
+    // Close delete dialog
+    const handleCloseDeleteDialog = () => {
+        setIsDeleteDialogOpen(false);
+        setDeleteError("");
     };
 
     // Create a list
@@ -648,146 +656,19 @@ const Board = () => {
 
             {/*Members side panel */}
             {isMemberPanelOpen && (
-                <>
-                    <button
-                        type="button"
-                        aria-label="Close members panel"
-                        onClick={() => setIsMemberPanelOpen(false)}
-                        className="fixed inset-0 z-40 bg-black/30"
-                    />
-
-                    <aside className="fixed inset-y-0 right-0 z-50 w-full max-w-sm overflow-y-auto border-l border-gray-200 bg-white p-6 shadow-xl">
-                        <div className="flex items-center justify-between gap-3">
-                            <h2 className="text-xl font-bold text-gray-900">
-                                Board Members
-                            </h2>
-
-                            <button
-                                type="button"
-                                onClick={() => setIsMemberPanelOpen(false)}
-                                className="rounded border px-3 py-1 "
-                            >
-                                Close
-                            </button>
-                        </div>
-
-                        {/* Add member form: admins only */}
-                        {isCurrentUserAdmin && (
-                            <form
-                                onSubmit={handleAddMember}
-                                className="mt-6 space-y-3"
-                            >
-                                <label
-                                    htmlFor="member-email"
-                                    className="block text-sm font-medium text-gray-700"
-                                >
-                                    Add member by email
-                                </label>
-
-                                <input
-                                    id="member-email"
-                                    type="email"
-                                    value={memberEmail}
-                                    onChange={(e) =>
-                                        setMemberEmail(e.target.value)
-                                    }
-                                    placeholder="Enter email"
-                                    className="w-full rounded-lg border border-gray-300 px-3 py-2 text-gray-900"
-                                    required
-                                />
-
-                                <button
-                                    type="submit"
-                                    disabled={
-                                        memberSubmitting || !memberEmail.trim()
-                                    }
-                                    className="w-full rounded-lg bg-blue-600 px-4 py-2 text-white disabled:opacity-50"
-                                >
-                                    {memberSubmitting
-                                        ? "Please wait..."
-                                        : "Add Member"}
-                                </button>
-                            </form>
-                        )}
-
-                        {/*Success and error messages*/}
-                        {memberMessage && (
-                            <p
-                                role="status"
-                                className="mt-4 text-sm text-gray-700"
-                            >
-                                {memberMessage}
-                            </p>
-                        )}
-
-                        {memberError && (
-                            <p
-                                role="alert"
-                                className="mt-4 text-sm text-red-600"
-                            >
-                                {memberError}
-                            </p>
-                        )}
-
-                        {/*Member list */}
-                        <div className="mt-6 space-y-3">
-                            <h3 className="font-semibold text-gray-900">
-                                Member List
-                            </h3>
-
-                            {memberLoading ? (
-                                <p className="text-sm text-gray-500">
-                                    Loading members...
-                                </p>
-                            ) : members.length === 0 ? (
-                                <p className="text-sm text-gray-500">
-                                    No members found.
-                                </p>
-                            ) : (
-                                members.map((member) => (
-                                    <div
-                                        key={member.userId}
-                                        className="flex items-start justify-between gap-3 rounded-lg border border-gray-200 p-3"
-                                    >
-                                        <div className="min-w-0">
-                                            <div className="flex flex-wrap items-center gap-2">
-                                                <p className="wrap-break-word font-medium text-gray-900">
-                                                    {member.userName}
-                                                </p>
-
-                                                {member.role === "admin" && (
-                                                    <span className="rounded bg-blue-100 px-2 py-0.5 text-xs font-medium text-blue-700">
-                                                        Admin
-                                                    </span>
-                                                )}
-                                            </div>
-
-                                            <p className="mt-1 break-all text-sm text-gray-600">
-                                                {member.email}
-                                            </p>
-                                        </div>
-
-                                        {isCurrentUserAdmin &&
-                                            member.role !== "admin" && (
-                                                <button
-                                                    type="button"
-                                                    disabled={memberSubmitting}
-                                                    onClick={() =>
-                                                        handleRemoveMember(
-                                                            member.userId,
-                                                        )
-                                                    }
-                                                    className="shrink-0 text-sm text-red-600 hover:underline disabled:opacity-50"
-                                                >
-                                                    Remove
-                                                </button>
-                                            )}
-                                    </div>
-                                ))
-                            )}
-                        </div>
-                    </aside>
-                </>
+                <MembersPanel
+                    members={members}
+                    isAdmin={isCurrentUserAdmin}
+                    memberEmail={memberEmail}
+                    loading={memberLoading}
+                    submitting={memberSubmitting}
+                    message={memberMessage}
+                    error={memberError}
+                    onClose={() => setIsMemberPanelOpen(false)}
+                    onEmailChange={setMemberEmail}
+                    onAddMember={handleAddMember}
+                    onRemoveMember={handleRemoveMember}
+                />
             )}
 
             <form onSubmit={handleCreateList} className="mt-6 flex gap-3">
@@ -1108,73 +989,13 @@ const Board = () => {
                 </div>
             </DragDropProvider>
             {isDeleteDialogOpen && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
-                    <div
-                        role="dialog"
-                        aria-modal="true"
-                        aria-labelledby="delete-board-title"
-                        className="w-full max-w-md rounded-2xl bg-white p-6 shadow-2xl"
-                    >
-                        <div className="mb-4 flex items-center gap-3">
-                            <div className="flex h-11 w-11 items-center justify-center rounded-full bg-red-100 text-red-600">
-                                !
-                            </div>
-
-                            <div>
-                                <h2
-                                    id="delete-board-title"
-                                    className="text-xl font-bold text-gray-900"
-                                >
-                                    Are you sure you want to delete this board?
-                                </h2>
-                            </div>
-                        </div>
-                        <p className="mb-5 text-sm leading-6 text-gray-600">
-                            Are you sure you want to delete{" "}
-                            <span className="font-semibold text-gray-900">
-                                {board.title}
-                            </span>
-                            ? All lists and cards inside this board will also be
-                            deleted
-                        </p>
-
-                        {deleteError && (
-                            <p
-                                role="alert"
-                                className="mb-4 rounded-lg bg-red-50 p-3 text-sm text-red-700
-                            "
-                            >
-                                {deleteError}
-                            </p>
-                        )}
-
-                        <div className="flex justify-end gap-3">
-                            <button
-                                type="button"
-                                disabled={deleteSubmitting}
-                                onClick={() => {
-                                    setIsDeleteDialogOpen(false);
-                                    setDeleteError("");
-                                }}
-                                className="rounded-lg border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 transition hover:bg-gray-50 disabled:opacity-50"
-                            >
-                                Cancel
-                            </button>
-
-                            <button
-                                type="button"
-                                disabled={deleteSubmitting}
-                                onClick={handleDeleteBoard}
-                                className="rounded-lg bg-red-600 px-4 py-2
-                             text-sm font-medium text-white transition hover:bg-red-700 disabled:cursor-not-allowed disabled:opacity-50"
-                            >
-                                {deleteSubmitting
-                                    ? "Deleting..."
-                                    : "Delete Board"}
-                            </button>
-                        </div>
-                    </div>
-                </div>
+                <DeleteBoardDialog
+                    boardTitle={board.title}
+                    error={deleteError}
+                    submitting={deleteSubmitting}
+                    onCancel={handleCloseDeleteDialog}
+                    onConfirm={handleDeleteBoard}
+                />
             )}
         </div>
     );
