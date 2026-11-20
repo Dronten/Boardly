@@ -21,6 +21,7 @@ import { checkAuth } from "@/services/authService";
 import DeleteBoardDialog from "@/components/DeleteBoardDialog";
 import MembersPanel from "@/components/MemberPanel";
 import AddListForm from "@/components/AddListForm";
+import BoardHeader from "@/components/BoardHeader";
 
 const groupCardsByList = (cards, lists) => {
     const groupedCards = {};
@@ -553,6 +554,18 @@ const Board = () => {
         }
     };
 
+    const handleStartEditBoardTitle = () => {
+        setEditedBoardTitle(board.title);
+        setIsEditingBoardTitle(true);
+    };
+    const handleCancelEditBoardTitle = () => {
+        setIsEditingBoardTitle(false);
+    };
+    const handleOpenDeleteDialog = () => {
+        setDeleteError("");
+        setIsDeleteDialogOpen(true);
+    };
+
     if (loading) {
         return <p className="p-8">Loading Board...</p>;
     }
@@ -585,64 +598,16 @@ const Board = () => {
             >
                 Back to Home
             </button>
-            {isEditingBoardTitle ? (
-                <form
-                    onSubmit={handleUpdateBoardTitle}
-                    className="mb-6 flex gap-2"
-                >
-                    <input
-                        value={editedBoardTitle}
-                        onChange={(e) => setEditedBoardTitle(e.target.value)}
-                        className="rounded-lg border p-2"
-                        placeholder="Board title"
-                        required
-                        autoFocus
-                    />
-
-                    <button
-                        type="submit"
-                        className="rounded-lg border px-3 py-2"
-                    >
-                        Save
-                    </button>
-
-                    <button
-                        type="button"
-                        className="rounded-lg border px-3 py-2"
-                        onClick={() => setIsEditingBoardTitle(false)}
-                    >
-                        Cancel
-                    </button>
-                </form>
-            ) : (
-                <div className="mb-6 flex items-center gap-3">
-                    <h1 className="text-3xl font-bold text-gray-900">
-                        {board.title}
-                    </h1>
-
-                    <button
-                        type="button"
-                        className="rounded-lg border px-3 py-2"
-                        onClick={() => {
-                            setEditedBoardTitle(board.title);
-                            setIsEditingBoardTitle(true);
-                        }}
-                    >
-                        Edit
-                    </button>
-
-                    <button
-                        type="button"
-                        onClick={() => {
-                            setDeleteError("");
-                            setIsDeleteDialogOpen(true);
-                        }}
-                        className="ml-auto rounded-lg bg-red-500 px-4 py-2 font-medium text-white transition hover:bg-red-700"
-                    >
-                        Delete Board
-                    </button>
-                </div>
-            )}
+            <BoardHeader
+                title={board.title}
+                isEditing={isEditingBoardTitle}
+                editedTitle={editedBoardTitle}
+                onTitleChange={setEditedBoardTitle}
+                onSubmit={handleUpdateBoardTitle}
+                onEditClick={handleStartEditBoardTitle}
+                onCancelEdit={handleCancelEditBoardTitle}
+                onDeleteClick={handleOpenDeleteDialog}
+            />
 
             {/* Members button */}
             <div className="mt-4">
