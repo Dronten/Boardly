@@ -22,6 +22,7 @@ import DeleteBoardDialog from "@/components/DeleteBoardDialog";
 import MembersPanel from "@/components/MemberPanel";
 import AddListForm from "@/components/AddListForm";
 import BoardHeader from "@/components/BoardHeader";
+import Card from "@/components/Card";
 
 const groupCardsByList = (cards, lists) => {
     const groupedCards = {};
@@ -356,6 +357,18 @@ const Board = () => {
         } finally {
             setCardSubmitting(false);
         }
+    };
+
+    const handleStartEditCard = (card) => {
+        setEditingCardId(card._id);
+        setEditingCardTitle(card.title);
+        setEditingCardDescription(card.description || "");
+    };
+
+    const handleCancelEditCard = () => {
+        setEditingCardId(null);
+        setEditingCardTitle("");
+        setEditingCardDescription("");
     };
 
     // Fetch Board members
@@ -756,120 +769,44 @@ const Board = () => {
                                                 index={index}
                                                 listId={list._id}
                                             >
-                                                <div
-                                                    key={card._id}
-                                                    className="rounded-md border p-3"
-                                                >
-                                                    {editingCardId ===
-                                                    card._id ? (
-                                                        <div className="space-y-2">
-                                                            <input
-                                                                value={
-                                                                    editingCardTitle
-                                                                }
-                                                                onChange={(e) =>
-                                                                    setEditingCardTitle(
-                                                                        e.target
-                                                                            .value,
-                                                                    )
-                                                                }
-                                                                placeholder="Card title"
-                                                                className="w-full rounded border p-2"
-                                                            />
-                                                            <textarea
-                                                                value={
-                                                                    editingCardDescription
-                                                                }
-                                                                onChange={(e) =>
-                                                                    setEditingCardDescription(
-                                                                        e.target
-                                                                            .value,
-                                                                    )
-                                                                }
-                                                                placeholder="Description"
-                                                                className="w-full rounded border p-2"
-                                                            />
-                                                            <button
-                                                                type="button"
-                                                                disabled={
-                                                                    cardSubmitting
-                                                                }
-                                                                onClick={() =>
-                                                                    handleUpdateCard(
-                                                                        list._id,
-                                                                        card._id,
-                                                                    )
-                                                                }
-                                                            >
-                                                                Save
-                                                            </button>{" "}
-                                                            <button
-                                                                type="button"
-                                                                onClick={() => {
-                                                                    setEditingCardId(
-                                                                        null,
-                                                                    );
-                                                                    setEditingCardTitle(
-                                                                        "",
-                                                                    );
-                                                                    setEditingCardDescription(
-                                                                        "",
-                                                                    );
-                                                                }}
-                                                            >
-                                                                Cancel
-                                                            </button>
-                                                        </div>
-                                                    ) : (
-                                                        <>
-                                                            <h3 className="font-medium">
-                                                                {card.title}
-                                                            </h3>
-                                                            {card.description && (
-                                                                <p className="mt-1 text-sm text-gray-600">
-                                                                    {
-                                                                        card.description
-                                                                    }
-                                                                </p>
-                                                            )}
-
-                                                            <div className="mt-3 flex gap-3">
-                                                                <button
-                                                                    type="button"
-                                                                    onClick={() => {
-                                                                        setEditingCardId(
-                                                                            card._id,
-                                                                        );
-                                                                        setEditingCardTitle(
-                                                                            card.title,
-                                                                        );
-                                                                        setEditingCardDescription(
-                                                                            card.description ||
-                                                                                "",
-                                                                        );
-                                                                    }}
-                                                                >
-                                                                    Edit
-                                                                </button>
-
-                                                                <button
-                                                                    type="button"
-                                                                    disabled={
-                                                                        cardSubmitting
-                                                                    }
-                                                                    onClick={() =>
-                                                                        handleDeleteCard(
-                                                                            list._id,
-                                                                            card._id,
-                                                                        )
-                                                                    }
-                                                                >
-                                                                    Delete
-                                                                </button>
-                                                            </div>
-                                                        </>
+                                                <Card
+                                                    card={card}
+                                                    isEditing={
+                                                        editingCardId ===
+                                                        card._id
+                                                    }
+                                                    editedTitle={
+                                                        editingCardTitle
+                                                    }
+                                                    editedDescription={
+                                                        editingCardDescription
+                                                    }
+                                                    submitting={cardSubmitting}
+                                                    onTitleChange={
+                                                        setEditingCardTitle
+                                                    }
+                                                    onDescriptionChange={
+                                                        setEditingCardDescription
+                                                    }
+                                                    onSave={() =>
+                                                        handleUpdateCard(
+                                                            list._id,
+                                                            card._id,
+                                                        )
+                                                    }
+                                                    onCancelEdit={
+                                                        handleCancelEditCard
+                                                    }
+                                                    onEditClick={() =>
+                                                        handleStartEditCard(
+                                                            card,
+                                                        )
+                                                    }
+                                                    onDelete={handleDeleteCard(
+                                                        list._id,
+                                                        card._id,
                                                     )}
-                                                </div>
+                                                />
                                             </SortableCard>
                                         ))}
                                 </div>
