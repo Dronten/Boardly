@@ -802,10 +802,12 @@ const Board = () => {
                                                             card,
                                                         )
                                                     }
-                                                    onDelete={handleDeleteCard(
-                                                        list._id,
-                                                        card._id,
-                                                    )}
+                                                    onDelete={() =>
+                                                        handleDeleteCard(
+                                                            list._id,
+                                                            card._id,
+                                                        )
+                                                    }
                                                 />
                                             </SortableCard>
                                         ))}
