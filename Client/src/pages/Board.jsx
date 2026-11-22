@@ -7,7 +7,6 @@ import {
 } from "@/services/boardService";
 import { move } from "@dnd-kit/helpers";
 import { DragDropProvider } from "@dnd-kit/react";
-import { SortableCard, DroppableList } from "@/hooks/useDragAndDrop";
 import { isSortable } from "@dnd-kit/react/sortable";
 import { createList, deleteList, editListTitle } from "@/services/listService";
 import {
@@ -22,8 +21,7 @@ import DeleteBoardDialog from "@/components/DeleteBoardDialog";
 import MembersPanel from "@/components/MemberPanel";
 import AddListForm from "@/components/AddListForm";
 import BoardHeader from "@/components/BoardHeader";
-import Card from "@/components/Card";
-import AddCardForm from "@/components/AddCardForm";
+import List from "@/components/List";
 
 const groupCardsByList = (cards, lists) => {
     const groupedCards = {};
@@ -277,6 +275,17 @@ const Board = () => {
         } finally {
             setListSubmitting(false);
         }
+    };
+
+    const handleStartEditList = (list) => {
+        setEditingListId(list._id);
+        setEditingListTitle(list.title);
+        setActionError("");
+    };
+
+    const handleCancelEditList = () => {
+        setEditingListId(null);
+        setEditingListTitle("");
     };
 
     // Create a card
@@ -689,154 +698,43 @@ const Board = () => {
             >
                 <div className="mt-8 flex gap-4 overflow-x-auto pb-4">
                     {lists.map((list) => (
-                        <div
+                        <List
                             key={list._id}
-                            className="w-72 shrink-0 rounded-xl border border-gray-200 bg-white p-4 shadow-sm"
-                        >
-                            {editingListId === list._id ? (
-                                <form
-                                    onSubmit={(e) => {
-                                        e.preventDefault();
-                                        handleUpdateList(list._id);
-                                    }}
-                                    className="flex gap-2"
-                                >
-                                    <input
-                                        autoFocus
-                                        value={editingListTitle}
-                                        onChange={(e) =>
-                                            setEditingListTitle(e.target.value)
-                                        }
-                                        maxLength={100}
-                                        aria-label="Edit list title"
-                                        className="min-w-0 flex-1 rounded border border-gray-300 bg-white px-2 py-1 text-gray-900"
-                                    />
-                                    <button
-                                        type="submit"
-                                        disabled={
-                                            listSubmitting ||
-                                            !editingListTitle.trim()
-                                        }
-                                        className="text-sm font-medium text-blue-600 disabled:opacity-50"
-                                    >
-                                        Save
-                                    </button>
-
-                                    <button
-                                        type="button"
-                                        disabled={listSubmitting}
-                                        onClick={() => {
-                                            setEditingListId(null);
-                                            setEditingListTitle("");
-                                        }}
-                                        className="text-sm text-gray-500"
-                                    >
-                                        Cancel
-                                    </button>
-                                </form>
-                            ) : (
-                                <div className="flex items-center justify-between gap-2">
-                                    <h2 className="font-semibold text-gray-900">
-                                        {list.title}
-                                    </h2>
-                                    <div className="flex gap-3">
-                                        <button
-                                            type="button"
-                                            disabled={listSubmitting}
-                                            onClick={() => {
-                                                setEditingListId(list._id);
-                                                setEditingListTitle(list.title);
-                                                setActionError("");
-                                            }}
-                                            className="text-sm text-blue-600 hover:underline"
-                                        >
-                                            Edit
-                                        </button>
-
-                                        <button
-                                            type="button"
-                                            disabled={listSubmitting}
-                                            onClick={() =>
-                                                handleDeleteList(list._id)
-                                            }
-                                            className="text-sm text-red-600 hover:underline"
-                                        >
-                                            Delete
-                                        </button>
-                                    </div>
-                                </div>
-                            )}
-
-                            <DroppableList listId={list._id}>
-                                <div className="mt-4 space-y-3">
-                                    {cards
-                                        .filter(
-                                            (card) => card.listId === list._id,
-                                        )
-                                        .sort((a, b) => a.order - b.order)
-                                        .map((card, index) => (
-                                            <SortableCard
-                                                key={card._id}
-                                                card={card}
-                                                index={index}
-                                                listId={list._id}
-                                            >
-                                                <Card
-                                                    card={card}
-                                                    isEditing={
-                                                        editingCardId ===
-                                                        card._id
-                                                    }
-                                                    editedTitle={
-                                                        editingCardTitle
-                                                    }
-                                                    editedDescription={
-                                                        editingCardDescription
-                                                    }
-                                                    submitting={cardSubmitting}
-                                                    onTitleChange={
-                                                        setEditingCardTitle
-                                                    }
-                                                    onDescriptionChange={
-                                                        setEditingCardDescription
-                                                    }
-                                                    onSave={() =>
-                                                        handleUpdateCard(
-                                                            list._id,
-                                                            card._id,
-                                                        )
-                                                    }
-                                                    onCancelEdit={
-                                                        handleCancelEditCard
-                                                    }
-                                                    onEditClick={() =>
-                                                        handleStartEditCard(
-                                                            card,
-                                                        )
-                                                    }
-                                                    onDelete={() =>
-                                                        handleDeleteCard(
-                                                            list._id,
-                                                            card._id,
-                                                        )
-                                                    }
-                                                />
-                                            </SortableCard>
-                                        ))}
-                                </div>
-                            </DroppableList>
-                            <AddCardForm
-                                isOpen={newCardListId === list._id}
-                                title={newCardTitle}
-                                description={newCardDescription}
-                                onDescriptionChange={setNewCardDescription}
-                                onCreate={(e) => handleCreateCard(e, list._id)}
-                                onTitleChange={setNewCardTitle}
-                                submitting={cardSubmitting}
-                                onCancel={handleCancelCard}
-                                onAddCard={() => handleAddCard(list)}
-                            />
-                        </div>
+                            list={list}
+                            cards={cards
+                                .filter((card) => card.listId === list._id)
+                                .sort((a, b) => a.order - b.order)}
+                            isEditing={editingListId === list._id}
+                            editedTitle={editingListTitle}
+                            submitting={listSubmitting}
+                            onTitleChange={setEditingListTitle}
+                            onSaveEdit={() => handleUpdateList(list._id)}
+                            onCancelEdit={handleCancelEditList}
+                            onEditClick={() => handleStartEditList(list)}
+                            onDelete={() => handleDeleteList(list._id)}
+                            editingCardId={editingCardId}
+                            editedCardTitle={editingCardTitle}
+                            editedCardDescription={editingCardDescription}
+                            cardSubmitting={cardSubmitting}
+                            onCardTitleChange={setEditingCardTitle}
+                            onCardDescriptionChange={setEditingCardDescription}
+                            onSaveCard={(cardId) =>
+                                handleUpdateCard(list._id, cardId)
+                            }
+                            onCancelEditCard={handleCancelEditCard}
+                            onEditCard={handleStartEditCard}
+                            onDeleteCard={(cardId) =>
+                                handleDeleteCard(list._id, cardId)
+                            }
+                            isAddingCard={newCardListId === list._id}
+                            newCardTitle={newCardTitle}
+                            newCardDescription={newCardDescription}
+                            onNewCardTitleChange={setNewCardTitle}
+                            onNewCardDescriptionChange={setNewCardDescription}
+                            onCreateCard={(e) => handleCreateCard(e, list._id)}
+                            onCancelAddCard={handleCancelCard}
+                            onOpenAddCard={() => handleAddCard(list)}
+                        />
                     ))}
                 </div>
             </DragDropProvider>
