@@ -23,6 +23,7 @@ import MembersPanel from "@/components/MemberPanel";
 import AddListForm from "@/components/AddListForm";
 import BoardHeader from "@/components/BoardHeader";
 import Card from "@/components/Card";
+import AddCardForm from "@/components/AddCardForm";
 
 const groupCardsByList = (cards, lists) => {
     const groupedCards = {};
@@ -579,6 +580,17 @@ const Board = () => {
         setIsDeleteDialogOpen(true);
     };
 
+    const handleCancelCard = () => {
+        setNewCardListId(null);
+        setNewCardTitle("");
+        setNewCardDescription("");
+    };
+
+    const handleAddCard = (list) => {
+        setNewCardListId(list._id);
+        setNewCardTitle("");
+        setNewCardDescription("");
+    };
     if (loading) {
         return <p className="p-8">Loading Board...</p>;
     }
@@ -813,69 +825,17 @@ const Board = () => {
                                         ))}
                                 </div>
                             </DroppableList>
-                            {newCardListId === list._id ? (
-                                <form
-                                    onSubmit={(e) =>
-                                        handleCreateCard(e, list._id)
-                                    }
-                                    className="mt-3 w-full space-y-2"
-                                >
-                                    <input
-                                        value={newCardTitle}
-                                        onChange={(e) =>
-                                            setNewCardTitle(e.target.value)
-                                        }
-                                        placeholder="Card Title"
-                                        className="w-full rounded-lg border p-2"
-                                        required
-                                    />
-
-                                    <textarea
-                                        value={newCardDescription}
-                                        onChange={(e) =>
-                                            setNewCardDescription(
-                                                e.target.value,
-                                            )
-                                        }
-                                        placeholder="Description (optional)"
-                                        className="w-full rounded-lg border p-2"
-                                    />
-
-                                    <button
-                                        type="submit"
-                                        disabled={cardSubmitting}
-                                        className="w-full rounded-lg bg-blue-600 px-3 py-2 text-white disabled:opacity-50"
-                                    >
-                                        {cardSubmitting
-                                            ? "Adding..."
-                                            : "Add Card"}
-                                    </button>
-
-                                    <button
-                                        type="button"
-                                        className="w-full rounded-lg border px-3 py-2"
-                                        onClick={() => {
-                                            setNewCardListId(null);
-                                            setNewCardTitle("");
-                                            setNewCardDescription("");
-                                        }}
-                                    >
-                                        Cancel
-                                    </button>
-                                </form>
-                            ) : (
-                                <button
-                                    type="button"
-                                    className="mt-3 w-full rounded-lg border px-3 py-2 text-left hover:bg-gray-50"
-                                    onClick={() => {
-                                        setNewCardListId(list._id);
-                                        setNewCardTitle("");
-                                        setNewCardDescription("");
-                                    }}
-                                >
-                                    + Add Card
-                                </button>
-                            )}
+                            <AddCardForm
+                                isOpen={newCardListId === list._id}
+                                title={newCardTitle}
+                                description={newCardDescription}
+                                onDescriptionChange={setNewCardDescription}
+                                onCreate={(e) => handleCreateCard(e, list._id)}
+                                onTitleChange={setNewCardTitle}
+                                submitting={cardSubmitting}
+                                onCancel={handleCancelCard}
+                                onAddCard={() => handleAddCard(list)}
+                            />
                         </div>
                     ))}
                 </div>
